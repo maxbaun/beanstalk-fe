@@ -1,0 +1,28 @@
+{
+  "extends": ["xo", "plugin:react/recommended"],
+  "env": {
+    "jest": true
+  },
+  "parser": "babel-eslint",
+  "plugins": ["react", "simple-import-sort"],
+  "rules": {
+    "indent": ["error", 2, {"SwitchCase": 1}],
+    "camelcase": "off",
+    "new-cap": "off",
+    "operator-linebreak": "off",
+    "generator-star-spacing": "off",
+    "no-mixed-operators": "off",
+    "quotes": [
+      "error",
+      "single",
+      {
+        "avoidEscape": true
+      }
+    ]
+  },
+  "globals": {
+    "window": true,
+    "localStorage": true,
+    "document": true
+  }
+}

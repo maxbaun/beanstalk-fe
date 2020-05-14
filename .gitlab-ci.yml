@@ -1,0 +1,56 @@
+image: alpine:latest
+
+variables:
+  CODE_QUALITY_DISABLED: "true"
+  CONTAINER_SCANNING_DISABLED: "true"
+  DAST_DISABLED: "true"
+  DEPENDENCY_SCANNING_DISABLED: "true"
+  LICENSE_MANAGEMENT_DISABLED: "true"
+  PERFORMANCE_DISABLED: "true"
+  SAST_DISABLED: "true"
+  ROLLOUT_RESOURCE_TYPE: deployment
+  POSTGRES_ENABLED: "false"
+  REPLICAS: 2
+  # Custom Config
+  APP_NAME: fe
+  PRODUCTION_ADDITIONAL_HOSTS: $KUBE_INGRESS_BASE_DOMAIN,www.$KUBE_INGRESS_BASE_DOMAIN
+  STAGING_ADDITIONAL_HOSTS: staging.$KUBE_INGRESS_BASE_DOMAIN
+  K8S_SECRET_SENTRY_ENVIRONMENT: $CI_COMMIT_REF_NAME
+
+stages:
+  - build
+  - test
+  - deploy # dummy stage to follow the template guidelines
+  - review
+  - dast
+  - staging
+  - canary
+  - production
+  - incremental rollout 10%
+  - incremental rollout 25%
+  - incremental rollout 50%
+  - incremental rollout 100%
+  - performance
+  - cleanup
+
+include:
+  - template: Jobs/Build.gitlab-ci.yml # https://gitlab.com/gitlab-org/gitlab-foss/blob/master/lib/gitlab/ci/templates/Jobs/Build.gitlab-ci.yml
+  - template: Jobs/Test.gitlab-ci.yml # https://gitlab.com/gitlab-org/gitlab-foss/blob/master/lib/gitlab/ci/templates/Jobs/Test.gitlab-ci.yml
+  - template: Jobs/Deploy.gitlab-ci.yml # https://gitlab.com/gitlab-org/gitlab-foss/blob/master/lib/gitlab/ci/templates/Jobs/Deploy.gitlab-ci.yml
+
+stop_staging:
+  extends: .auto-deploy
+  stage: cleanup
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - auto-deploy initialize_tiller
+    - auto-deploy delete
+  environment:
+    name: staging
+    action: stop
+  when: manual
+  allow_failure: true
+  only:
+    refs:
+      - master
